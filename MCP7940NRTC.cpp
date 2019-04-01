@@ -30,22 +30,22 @@
 #endif
 #include "MCP7940N.h"
 
-#define DS1307_CTRL_ID 0x68 
+#define MCP7940N_CTRL_ID 0x6F 
 
-MCP7940N::MCP7940N()
+MCP7940NRTC::MCP7940NRTC()
 {
   Wire.begin();
 }
   
 // PUBLIC FUNCTIONS
-time_t MCP7940N::get()   // Aquire data from buffer and convert to time_t
+time_t MCP7940NRTC::get()   // Aquire data from buffer and convert to time_t
 {
   tmElements_t tm;
   if (read(tm) == false) return 0;
   return(makeTime(tm));
 }
 
-bool MCP7940N::set(time_t t)
+bool MCP7940NRTC::set(time_t t)
 {
   tmElements_t tm;
   breakTime(t, tm);
@@ -53,10 +53,10 @@ bool MCP7940N::set(time_t t)
 }
 
 // Aquire data from the RTC chip in BCD format
-bool MCP7940N::read(tmElements_t &tm)
+bool MCP7940NRTC::read(tmElements_t &tm)
 {
   uint8_t sec;
-  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(MCP7940N_CTRL_ID);
 #if ARDUINO >= 100  
   Wire.write((uint8_t)0x00); 
 #else
@@ -69,7 +69,7 @@ bool MCP7940N::read(tmElements_t &tm)
   exists = true;
 
   // request the 7 data fields   (secs, min, hr, dow, date, mth, yr)
-  Wire.requestFrom(DS1307_CTRL_ID, tmNbrFields);
+  Wire.requestFrom(MCP7940N_CTRL_ID, tmNbrFields);
   if (Wire.available() < tmNbrFields) return false;
 #if ARDUINO >= 100
   sec = Wire.read();
@@ -94,12 +94,12 @@ bool MCP7940N::read(tmElements_t &tm)
   return true;
 }
 
-bool MCP7940N::write(tmElements_t &tm)
+bool MCP7940NRTC::write(tmElements_t &tm)
 {
   // To eliminate any potential race conditions,
   // stop the clock before writing the values,
   // then restart it after.
-  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(MCP7940N_CTRL_ID);
 #if ARDUINO >= 100  
   Wire.write((uint8_t)0x00); // reset register pointer  
   Wire.write((uint8_t)0x80); // Stop the clock. The seconds will be written last
@@ -126,7 +126,7 @@ bool MCP7940N::write(tmElements_t &tm)
   exists = true;
 
   // Now go back and set the seconds, starting the clock back up as a side effect
-  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(MCP7940N_CTRL_ID);
 #if ARDUINO >= 100  
   Wire.write((uint8_t)0x00); // reset register pointer  
   Wire.write(dec2bcd(tm.Second)); // write the seconds, with the stop bit clear to restart
@@ -142,9 +142,9 @@ bool MCP7940N::write(tmElements_t &tm)
   return true;
 }
 
-unsigned char MCP7940N::isRunning()
+unsigned char MCP7940NRTC::isRunning()
 {
-  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(MCP7940N_CTRL_ID);
 #if ARDUINO >= 100  
   Wire.write((uint8_t)0x00); 
 #else
@@ -153,7 +153,7 @@ unsigned char MCP7940N::isRunning()
   Wire.endTransmission();
 
   // Just fetch the seconds register and check the top bit
-  Wire.requestFrom(DS1307_CTRL_ID, 1);
+  Wire.requestFrom(MCP7940N_CTRL_ID, 1);
 #if ARDUINO >= 100
   return !(Wire.read() & 0x80);
 #else
@@ -161,11 +161,11 @@ unsigned char MCP7940N::isRunning()
 #endif  
 }
 
-void MCP7940N::setCalibration(char calValue)
+void MCP7940NRTC::setCalibration(char calValue)
 {
   unsigned char calReg = abs(calValue) & 0x1f;
   if (calValue >= 0) calReg |= 0x20; // S bit is positive to speed up the clock
-  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(MCP7940N_CTRL_ID);
 #if ARDUINO >= 100  
   Wire.write((uint8_t)0x07); // Point to calibration register
   Wire.write(calReg);
@@ -176,9 +176,9 @@ void MCP7940N::setCalibration(char calValue)
   Wire.endTransmission();  
 }
 
-char MCP7940N::getCalibration()
+char MCP7940NRTC::getCalibration()
 {
-  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(MCP7940N_CTRL_ID);
 #if ARDUINO >= 100  
   Wire.write((uint8_t)0x07); 
 #else
@@ -186,7 +186,7 @@ char MCP7940N::getCalibration()
 #endif  
   Wire.endTransmission();
 
-  Wire.requestFrom(DS1307_CTRL_ID, 1);
+  Wire.requestFrom(MCP7940N_CTRL_ID, 1);
 #if ARDUINO >= 100
   unsigned char calReg = Wire.read();
 #else
@@ -200,18 +200,18 @@ char MCP7940N::getCalibration()
 // PRIVATE FUNCTIONS
 
 // Convert Decimal to Binary Coded Decimal (BCD)
-uint8_t MCP7940N::dec2bcd(uint8_t num)
+uint8_t MCP7940NRTC::dec2bcd(uint8_t num)
 {
   return ((num/10 * 16) + (num % 10));
 }
 
 // Convert Binary Coded Decimal (BCD) to Decimal
-uint8_t MCP7940N::bcd2dec(uint8_t num)
+uint8_t MCP7940NRTC::bcd2dec(uint8_t num)
 {
   return ((num/16 * 10) + (num % 16));
 }
 
 bool MCP7940N::exists = false;
 
-MCP7940N RTC = MCP7940N(); // create an instance for the user
+MCP7940NRTC RTC = MCP7940NRTC(); // create an instance for the user
 
