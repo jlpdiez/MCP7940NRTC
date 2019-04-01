@@ -1,6 +1,6 @@
-Readme file for DS1307RTC Library
+Readme file for MCP7940N Library
 
-The DS1307RTC library is provided to demonstrate the Arduino Time library.
+The MCP7940N library is provided to demonstrate the Arduino Time library.
 
 See the TimeRTC example sketches privided with the Time library download for usage
 

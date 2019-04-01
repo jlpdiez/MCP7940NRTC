@@ -1,7 +1,7 @@
 /*
- * DS1307RTC.h - library for DS1307 RTC
+ * MCP7940NRTC.h - library for MCP7940N RTC
   
-  Copyright (c) Michael Margolis 2009
+  Copyright (c) Juan L. Perez Diez 2019
   This library is intended to be uses with Arduino Time library functions
 
   The library is free software; you can redistribute it and/or
@@ -17,9 +17,8 @@
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  
-  30 Dec 2009 - Initial release
-  5 Sep 2011 updated for Arduino 1.0
+
+  1 Apr 2019 - Initial release
  */
 
 
@@ -29,24 +28,24 @@
 #else
 #include <Wire.h>
 #endif
-#include "DS1307RTC.h"
+#include "MCP7940N.h"
 
 #define DS1307_CTRL_ID 0x68 
 
-DS1307RTC::DS1307RTC()
+MCP7940N::MCP7940N()
 {
   Wire.begin();
 }
   
 // PUBLIC FUNCTIONS
-time_t DS1307RTC::get()   // Aquire data from buffer and convert to time_t
+time_t MCP7940N::get()   // Aquire data from buffer and convert to time_t
 {
   tmElements_t tm;
   if (read(tm) == false) return 0;
   return(makeTime(tm));
 }
 
-bool DS1307RTC::set(time_t t)
+bool MCP7940N::set(time_t t)
 {
   tmElements_t tm;
   breakTime(t, tm);
@@ -54,7 +53,7 @@ bool DS1307RTC::set(time_t t)
 }
 
 // Aquire data from the RTC chip in BCD format
-bool DS1307RTC::read(tmElements_t &tm)
+bool MCP7940N::read(tmElements_t &tm)
 {
   uint8_t sec;
   Wire.beginTransmission(DS1307_CTRL_ID);
@@ -95,7 +94,7 @@ bool DS1307RTC::read(tmElements_t &tm)
   return true;
 }
 
-bool DS1307RTC::write(tmElements_t &tm)
+bool MCP7940N::write(tmElements_t &tm)
 {
   // To eliminate any potential race conditions,
   // stop the clock before writing the values,
@@ -143,7 +142,7 @@ bool DS1307RTC::write(tmElements_t &tm)
   return true;
 }
 
-unsigned char DS1307RTC::isRunning()
+unsigned char MCP7940N::isRunning()
 {
   Wire.beginTransmission(DS1307_CTRL_ID);
 #if ARDUINO >= 100  
@@ -162,7 +161,7 @@ unsigned char DS1307RTC::isRunning()
 #endif  
 }
 
-void DS1307RTC::setCalibration(char calValue)
+void MCP7940N::setCalibration(char calValue)
 {
   unsigned char calReg = abs(calValue) & 0x1f;
   if (calValue >= 0) calReg |= 0x20; // S bit is positive to speed up the clock
@@ -177,7 +176,7 @@ void DS1307RTC::setCalibration(char calValue)
   Wire.endTransmission();  
 }
 
-char DS1307RTC::getCalibration()
+char MCP7940N::getCalibration()
 {
   Wire.beginTransmission(DS1307_CTRL_ID);
 #if ARDUINO >= 100  
@@ -201,18 +200,18 @@ char DS1307RTC::getCalibration()
 // PRIVATE FUNCTIONS
 
 // Convert Decimal to Binary Coded Decimal (BCD)
-uint8_t DS1307RTC::dec2bcd(uint8_t num)
+uint8_t MCP7940N::dec2bcd(uint8_t num)
 {
   return ((num/10 * 16) + (num % 10));
 }
 
 // Convert Binary Coded Decimal (BCD) to Decimal
-uint8_t DS1307RTC::bcd2dec(uint8_t num)
+uint8_t MCP7940N::bcd2dec(uint8_t num)
 {
   return ((num/16 * 10) + (num % 16));
 }
 
-bool DS1307RTC::exists = false;
+bool MCP7940N::exists = false;
 
-DS1307RTC RTC = DS1307RTC(); // create an instance for the user
+MCP7940N RTC = MCP7940N(); // create an instance for the user
 

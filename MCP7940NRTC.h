@@ -1,19 +1,20 @@
 /*
- * DS1307RTC.h - library for DS1307 RTC
+ * MCP7940NRTC.h - library for MCP7940N RTC
  * This library is intended to be uses with Arduino Time library functions
+ * Based on the library for the DS1307 https://github.com/PaulStoffregen/DS1307RTC
  */
 
-#ifndef DS1307RTC_h
-#define DS1307RTC_h
+#ifndef MCP7940NRTC_h
+#define MCP7940NRTC_h
 
 #include <TimeLib.h>
 
 // library interface description
-class DS1307RTC
+class MCP7940NRTC
 {
   // user-accessible "public" interface
   public:
-    DS1307RTC();
+    MCP7940NRTC();
     static time_t get();
     static bool set(time_t t);
     static bool read(tmElements_t &tm);
@@ -33,7 +34,7 @@ class DS1307RTC
 #undef RTC // workaround for Arduino Due, which defines "RTC"...
 #endif
 
-extern DS1307RTC RTC;
+extern MCP7940NRTC RTC;
 
 #endif
  

@@ -1,11 +1,11 @@
 {
-  "name": "DS1307RTC",
+  "name": "MCP7940N",
   "keywords": "i2c, rtc, time, clock",
-  "description": "DS1307 RTC (Real-Time-Clock)",
+  "description": "MCP7940N RTC (Real-Time-Clock)",
   "repository":
   {
     "type": "git",
-    "url": "https://github.com/PaulStoffregen/DS1307RTC.git"
+    "url": "https://github.com/Melkoroth/MCP7940NRTC"
   },
   "frameworks": "arduino",
   "platforms": "atmelavr"
