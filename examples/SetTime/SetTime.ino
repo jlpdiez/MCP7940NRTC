@@ -2,6 +2,13 @@
 #include <TimeLib.h>
 #include <MCP7940NRTC.h>
 
+//Change these if needed
+const uint8_t SCLPIN = 12;
+const uint8_t SDAPIN = 14;
+
+//Declare RTC object
+MCP7940NRTC RTC = MCP7940NRTC(SDAPIN, SCLPIN);
+
 const char *monthName[12] = {
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
@@ -22,7 +29,7 @@ void setup() {
     }
   }
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial) ; // wait for Arduino Serial Monitor
   delay(200);
   if (parse && config) {

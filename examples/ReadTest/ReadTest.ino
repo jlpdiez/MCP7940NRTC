@@ -2,8 +2,15 @@
 #include <TimeLib.h>
 #include <MCP7940NRTC.h>
 
+//Change these if needed
+const uint8_t SCLPIN = 12;
+const uint8_t SDAPIN = 14;
+
+//Declare RTC object
+MCP7940NRTC RTC = MCP7940NRTC(SDAPIN, SCLPIN);
+
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial) ; // wait for serial
   delay(200);
   Serial.println("MCP7940N Read Test");

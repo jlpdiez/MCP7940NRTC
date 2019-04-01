@@ -28,33 +28,31 @@
 #else
 #include <Wire.h>
 #endif
-#include "MCP7940N.h"
+#include "MCP7940NRTC.h"
 
 #define MCP7940N_CTRL_ID 0x6F 
 
-MCP7940NRTC::MCP7940NRTC()
-{
-  Wire.begin();
+MCP7940NRTC::MCP7940NRTC(uint8_t sdaPin, uint8_t sclPin)
+: _sdaPin(sdaPin), _sclPin(sclPin) {
+  Wire.begin(_sdaPin, _sclPin);
 }
   
 // PUBLIC FUNCTIONS
-time_t MCP7940NRTC::get()   // Aquire data from buffer and convert to time_t
-{
+// Aquire data from buffer and convert to time_t
+time_t MCP7940NRTC::get() {
   tmElements_t tm;
   if (read(tm) == false) return 0;
   return(makeTime(tm));
 }
 
-bool MCP7940NRTC::set(time_t t)
-{
+bool MCP7940NRTC::set(time_t t) {
   tmElements_t tm;
   breakTime(t, tm);
   return write(tm); 
 }
 
 // Aquire data from the RTC chip in BCD format
-bool MCP7940NRTC::read(tmElements_t &tm)
-{
+bool MCP7940NRTC::read(tmElements_t &tm) {
   uint8_t sec;
   Wire.beginTransmission(MCP7940N_CTRL_ID);
 #if ARDUINO >= 100  
@@ -63,10 +61,10 @@ bool MCP7940NRTC::read(tmElements_t &tm)
   Wire.send(0x00);
 #endif  
   if (Wire.endTransmission() != 0) {
-    exists = false;
+    _exists = false;
     return false;
   }
-  exists = true;
+  _exists = true;
 
   // request the 7 data fields   (secs, min, hr, dow, date, mth, yr)
   Wire.requestFrom(MCP7940N_CTRL_ID, tmNbrFields);
@@ -94,8 +92,7 @@ bool MCP7940NRTC::read(tmElements_t &tm)
   return true;
 }
 
-bool MCP7940NRTC::write(tmElements_t &tm)
-{
+bool MCP7940NRTC::write(tmElements_t &tm) {
   // To eliminate any potential race conditions,
   // stop the clock before writing the values,
   // then restart it after.
@@ -120,10 +117,10 @@ bool MCP7940NRTC::write(tmElements_t &tm)
   Wire.send(dec2bcd(tmYearToY2k(tm.Year)));   
 #endif
   if (Wire.endTransmission() != 0) {
-    exists = false;
+    _exists = false;
     return false;
   }
-  exists = true;
+  _exists = true;
 
   // Now go back and set the seconds, starting the clock back up as a side effect
   Wire.beginTransmission(MCP7940N_CTRL_ID);
@@ -135,15 +132,14 @@ bool MCP7940NRTC::write(tmElements_t &tm)
   Wire.send(dec2bcd(tm.Second)); // write the seconds, with the stop bit clear to restart
 #endif
   if (Wire.endTransmission() != 0) {
-    exists = false;
+    _exists = false;
     return false;
   }
-  exists = true;
+  _exists = true;
   return true;
 }
 
-unsigned char MCP7940NRTC::isRunning()
-{
+unsigned char MCP7940NRTC::isRunning() {
   Wire.beginTransmission(MCP7940N_CTRL_ID);
 #if ARDUINO >= 100  
   Wire.write((uint8_t)0x00); 
@@ -176,8 +172,7 @@ void MCP7940NRTC::setCalibration(char calValue)
   Wire.endTransmission();  
 }
 
-char MCP7940NRTC::getCalibration()
-{
+char MCP7940NRTC::getCalibration() {
   Wire.beginTransmission(MCP7940N_CTRL_ID);
 #if ARDUINO >= 100  
   Wire.write((uint8_t)0x07); 
@@ -200,18 +195,14 @@ char MCP7940NRTC::getCalibration()
 // PRIVATE FUNCTIONS
 
 // Convert Decimal to Binary Coded Decimal (BCD)
-uint8_t MCP7940NRTC::dec2bcd(uint8_t num)
-{
+uint8_t MCP7940NRTC::dec2bcd(uint8_t num) {
   return ((num/10 * 16) + (num % 10));
 }
 
 // Convert Binary Coded Decimal (BCD) to Decimal
-uint8_t MCP7940NRTC::bcd2dec(uint8_t num)
-{
+uint8_t MCP7940NRTC::bcd2dec(uint8_t num) {
   return ((num/16 * 10) + (num % 16));
 }
 
-bool MCP7940N::exists = false;
-
-MCP7940NRTC RTC = MCP7940NRTC(); // create an instance for the user
+bool MCP7940NRTC::_exists = false;
 
