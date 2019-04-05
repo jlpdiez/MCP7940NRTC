@@ -13,20 +13,22 @@ class MCP7940NRTC {
 
   public:
     MCP7940NRTC(uint8_t sdaPin, uint8_t sclPin);
-    static time_t get();
-    static bool set(time_t t);
-    static bool read(tmElements_t &tm);
-    static bool write(tmElements_t &tm);
-    static bool chipPresent() { return _exists; }
-    static unsigned char isRunning();
-    static void setConfig(uint8_t confValue);
-    static uint8_t getConfig();
-    static void setCalibration(char calValue);
-    static char getCalibration();
+    time_t get();
+    bool set(time_t t);
+    bool read(tmElements_t &tm);
+    bool write(tmElements_t &tm);
+    bool chipPresent() { return _exists; }
+    unsigned char isRunning();
+    void setConfig(uint8_t confValue);
+    uint8_t getConfig();
+    void setCalibration(char calValue);
+    char getCalibration();
 
   private:
     uint8_t _sdaPin, _sclPin;
-    static bool _exists;
+    bool _exists;
+    uint8_t getRegister(const uint8_t regAddr);
+    void setRegister(const uint8_t regAddr, const uint8_t regData);
     static uint8_t dec2bcd(uint8_t num);
     static uint8_t bcd2dec(uint8_t num);
 };
