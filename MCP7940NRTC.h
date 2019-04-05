@@ -19,6 +19,8 @@ class MCP7940NRTC {
     static bool write(tmElements_t &tm);
     static bool chipPresent() { return _exists; }
     static unsigned char isRunning();
+    static void setConfig(uint8_t confValue);
+    static uint8_t getConfig();
     static void setCalibration(char calValue);
     static char getCalibration();
 

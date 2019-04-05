@@ -29,8 +29,10 @@
 #include <Wire.h>
 #endif
 #include "MCP7940NRTC.h"
+#include <Arduino.h> //REMOVE THIS
 
 #define MCP7940N_CTRL_ID 0x6F 
+#define MCP7940N_CONF_REG 0x07
 
 MCP7940NRTC::MCP7940NRTC(uint8_t sdaPin, uint8_t sclPin)
 : _sdaPin(sdaPin), _sclPin(sclPin) {
@@ -71,7 +73,7 @@ bool MCP7940NRTC::read(tmElements_t &tm) {
   if (Wire.available() < tmNbrFields) return false;
 #if ARDUINO >= 100
   sec = Wire.read();
-  tm.Second = bcd2dec(sec & 0x7f);   
+  tm.Second = bcd2dec(sec & 0x7f);    
   tm.Minute = bcd2dec(Wire.read() );
   tm.Hour =   bcd2dec(Wire.read() & 0x3f);  // mask assumes 24hr clock
   tm.Wday = bcd2dec(Wire.read() );
@@ -88,7 +90,7 @@ bool MCP7940NRTC::read(tmElements_t &tm) {
   tm.Month = bcd2dec(Wire.receive() );
   tm.Year = y2kYearToTm((bcd2dec(Wire.receive())));
 #endif
-  if (sec & 0x80) return false; // clock is halted
+  if (sec & 0x00) return false; // clock is halted
   return true;
 }
 
@@ -99,7 +101,7 @@ bool MCP7940NRTC::write(tmElements_t &tm) {
   Wire.beginTransmission(MCP7940N_CTRL_ID);
 #if ARDUINO >= 100  
   Wire.write((uint8_t)0x00); // reset register pointer  
-  Wire.write((uint8_t)0x80); // Stop the clock. The seconds will be written last
+  Wire.write((uint8_t)0x00); // Stop the clock. The seconds will be written last
   Wire.write(dec2bcd(tm.Minute));
   Wire.write(dec2bcd(tm.Hour));      // sets 24 hour format
   Wire.write(dec2bcd(tm.Wday));   
@@ -108,7 +110,7 @@ bool MCP7940NRTC::write(tmElements_t &tm) {
   Wire.write(dec2bcd(tmYearToY2k(tm.Year))); 
 #else  
   Wire.send(0x00); // reset register pointer  
-  Wire.send(0x80); // Stop the clock. The seconds will be written last
+  Wire.send(0x00); // Stop the clock. The seconds will be written last
   Wire.send(dec2bcd(tm.Minute));
   Wire.send(dec2bcd(tm.Hour));      // sets 24 hour format
   Wire.send(dec2bcd(tm.Wday));   
@@ -126,10 +128,10 @@ bool MCP7940NRTC::write(tmElements_t &tm) {
   Wire.beginTransmission(MCP7940N_CTRL_ID);
 #if ARDUINO >= 100  
   Wire.write((uint8_t)0x00); // reset register pointer  
-  Wire.write(dec2bcd(tm.Second)); // write the seconds, with the stop bit clear to restart
+  Wire.write(dec2bcd(tm.Second) | 0x80); // write the seconds and start oscillator
 #else  
   Wire.send(0x00); // reset register pointer  
-  Wire.send(dec2bcd(tm.Second)); // write the seconds, with the stop bit clear to restart
+  Wire.send(dec2bcd(tm.Second) | 0x80); // write the seconds and start oscillator
 #endif
   if (Wire.endTransmission() != 0) {
     _exists = false;
@@ -139,6 +141,7 @@ bool MCP7940NRTC::write(tmElements_t &tm) {
   return true;
 }
 
+//TODO: Why does this return unsigned char and not bool??
 unsigned char MCP7940NRTC::isRunning() {
   Wire.beginTransmission(MCP7940N_CTRL_ID);
 #if ARDUINO >= 100  
@@ -150,15 +153,50 @@ unsigned char MCP7940NRTC::isRunning() {
 
   // Just fetch the seconds register and check the top bit
   Wire.requestFrom(MCP7940N_CTRL_ID, 1);
+  // uint16_t readB = Wire.read();
+  // Serial.print("isRunning: ");
+  // Serial.println(readB, HEX);
+  // Serial.print("& 0x80: ");
+  // Serial.println(readB & 0x80);
+  // Serial.print("& 0x80 == 0x80: ");
+  // Serial.println((readB & 0x80) == 0x80);
 #if ARDUINO >= 100
-  return !(Wire.read() & 0x80);
+  return (Wire.read() & 0x80);
 #else
-  return !(Wire.receive() & 0x80);
+  return (Wire.receive() & 0x80);
 #endif  
 }
 
-void MCP7940NRTC::setCalibration(char calValue)
-{
+void MCP7940NRTC::setConfig(uint8_t confValue) {
+  Wire.beginTransmission(MCP7940N_CTRL_ID);
+#if ARDUINO >= 100  
+  Wire.write((uint8_t)MCP7940N_CONF_REG); // Point to calibration register
+  Wire.write(confValue);
+#else  
+  Wire.send(MCP7940N_CONF_REG); // Point to calibration register
+  Wire.send(confValue);
+#endif
+  Wire.endTransmission();  
+}
+
+uint8_t MCP7940NRTC::getConfig() {
+  Wire.beginTransmission(MCP7940N_CTRL_ID);
+#if ARDUINO >= 100  
+  Wire.write((uint8_t)MCP7940N_CONF_REG); 
+#else
+  Wire.send(MCP7940N_CONF_REG);
+#endif  
+  Wire.endTransmission();
+
+  Wire.requestFrom(MCP7940N_CTRL_ID, 1);
+#if ARDUINO >= 100
+  return Wire.read();
+#else
+  return Wire.receive();
+#endif
+}
+
+void MCP7940NRTC::setCalibration(char calValue) {
   unsigned char calReg = abs(calValue) & 0x1f;
   if (calValue >= 0) calReg |= 0x20; // S bit is positive to speed up the clock
   Wire.beginTransmission(MCP7940N_CTRL_ID);
