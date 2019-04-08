@@ -5,6 +5,7 @@
 
 #define MCP7940N_CTRL_ID 0x6F 
 #define MCP7940N_CONTROL_REG 0x07
+#define MCP7940N_WKDAY_REG 0x03
 
 // *********************************************
 // PUBLIC METHODS
@@ -36,16 +37,11 @@ bool MCP7940NRTC::read(tmElements_t &tm) {
     uint8_t sec;
     Wire.beginTransmission(MCP7940N_CTRL_ID);
     Wire.write((uint8_t)0x00); 
-    if (Wire.endTransmission() != 0) {
-      _exists = false;
-      return false;
-    }
-    _exists = true;
+    if (!endTransmission()) return false;
 
-    // request the 7 data fields   (secs, min, hr, dow, date, mth, yr)
+    //Request the 7 data fields   (secs, min, hr, dow, date, mth, yr)
     Wire.requestFrom(MCP7940N_CTRL_ID, tmNbrFields);
     if (Wire.available() < tmNbrFields) return false;
-
     sec = Wire.read();
     tm.Second = bcd2dec(sec & 0x7f);    
     tm.Minute = bcd2dec(Wire.read() );
@@ -55,6 +51,7 @@ bool MCP7940NRTC::read(tmElements_t &tm) {
     tm.Month = bcd2dec(Wire.read() );
     tm.Year = y2kYearToTm((bcd2dec(Wire.read())));
 
+    //Technically we should read OSCRUN bit and not ST but this is fastest
     if (sec & 0x00) return false; // clock is halted
     return true;
 }
@@ -75,31 +72,20 @@ bool MCP7940NRTC::write(tmElements_t &tm) {
     Wire.write(dec2bcd(tm.Day));
     Wire.write(dec2bcd(tm.Month));
     Wire.write(dec2bcd(tmYearToY2k(tm.Year))); 
-
-    if (Wire.endTransmission() != 0) {
-        _exists = false;
-        return false;
-    }
-    _exists = true;
+    if (!endTransmission()) return false;
 
     // Now go back and set the seconds, starting the clock back up as a side effect
     Wire.beginTransmission(MCP7940N_CTRL_ID);
     Wire.write((uint8_t)0x00); // reset register pointer  
     Wire.write(dec2bcd(tm.Second) | 0x80); // write the seconds and start oscillator
-
-    if (Wire.endTransmission() != 0) {
-        _exists = false;
-        return false;
-    }
-    _exists = true;
-    return true;
+    return endTransmission();
 }
 
 //Makes use of OSCRUN bit which is bit 5 of 0x03 register.
 //OSCRUN 1 = Oscillator is enabled and running
 //OSCRUN 0 = Oscillator has stopped or has been disabled
 bool MCP7940NRTC::isRunning() {
-    return getRegisterBit(0x03, 5);
+    return getRegisterBit(MCP7940N_WKDAY_REG, 5);
 }
 
 void MCP7940NRTC::setConfig(const uint8_t confValue) {
@@ -148,25 +134,50 @@ uint8_t MCP7940NRTC::getConfig() const {
 //VBATEN 1 = Vbat input is enabled
 //VBATEN 0 = Vbat input is disabled
 bool MCP7940NRTC::getBatteryStatus() const {
-    return getRegisterBit(0x03, 3);
+    return getRegisterBit(MCP7940N_WKDAY_REG, 3);
 }
 
 void MCP7940NRTC::enableBattery() {
-    setRegisterBit(0x03, 3, 1);
+    setRegisterBit(MCP7940N_WKDAY_REG, 3, 1);
 }
 
 void MCP7940NRTC::disableBattery() {
-    setRegisterBit(0x03, 3, 0);
+    setRegisterBit(MCP7940N_WKDAY_REG, 3, 0);
 }
 
+//Makes use of EXTOSC bit which is bit 3 of 0x07 register.
+//EXTOSC 1 = Enable X1 pin to be driven by external 32.768 kHz source
+//EXTOSC 0 = Disable external 32.768 kHz input.
+bool MCP7940NRTC::getExtOscStatus() const {
+    return getRegisterBit(MCP7940N_CONTROL_REG, 3);
+}
+
+void MCP7940NRTC::enableExtOsc() {
+    setRegisterBit(MCP7940N_CONTROL_REG, 3, 1);
+}
+
+void MCP7940NRTC::disableExtOsc() {
+    setRegisterBit(MCP7940N_CONTROL_REG, 3, 0);
+}
 
 // *********************************************
 // PRIVATE METHODS
 // *********************************************
+//Returns true if communication was successful
+//Sets _exists flag
+bool MCP7940NRTC::endTransmission() {
+    if (Wire.endTransmission() != 0) {
+        _exists = false;
+        return false;
+    }
+    _exists = true;
+    return true;
+}
+
 uint8_t MCP7940NRTC::getRegister(const uint8_t regAddr) const {
     Wire.beginTransmission(MCP7940N_CTRL_ID);
     Wire.write((uint8_t)regAddr); 
-    Wire.endTransmission();
+    endTransmission();
     Wire.requestFrom(MCP7940N_CTRL_ID, 1);
     return Wire.read();
 }
@@ -178,7 +189,7 @@ void MCP7940NRTC::setRegister(const uint8_t regAddr, const uint8_t regData) {
     Wire.write((uint8_t)regAddr);
     //Give data to write
     Wire.write(regData);
-    Wire.endTransmission();  
+    endTransmission();
 }
 
 //Check that bit bitNum of registerAddress is 1

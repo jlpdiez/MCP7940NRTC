@@ -4,7 +4,8 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
 This library is intended to make use of the MCP7940N RTC under the Arduino environment for the ESP8266, ESP01, ESP12E & all other derivatives.
-It's main purpose is to be used in conjuction with the [Time library](https://github.com/PaulStoffregen/Time). See the TimeRTC example sketches provided with the Time library download for usage
+
+It's main purpose is to be used in conjuction with the [Time library](https://github.com/PaulStoffregen/Time).
 
 ## Usage:
 First of all object should be created by passing the SDA & SCL pin numbers to its contructor:

@@ -40,24 +40,33 @@ class MCP7940NRTC {
     //Writes the given data to the HW registers
     //Returns false if there was a comms error
     bool write(tmElements_t &tm);
-    //This is set to true when no communication errors
+    //This is set to true when no communication errors exist
     bool chipPresent() { return _exists; }
     //Checks the oscillator running bit
     bool isRunning();
-
-    void setConfig(uint8_t confValue);
-    uint8_t getConfig() const;
     //Checks the external battery status
     bool getBatteryStatus() const;
     //Sets the external battery
     void enableBattery();
     void disableBattery();
+    //Checks the external oscillator status
+    bool getExtOscStatus() const;
+    //Sets the external oscillator
+    void enableExtOsc();
+    void disableExtOsc();
     //void setCalibration(char calValue);
     //char getCalibration();
+    void setConfig(uint8_t confValue);
+    uint8_t getConfig() const;
 
   private:
     uint8_t _sdaPin, _sclPin;
+    //Goes to true when comm was succesful
     bool _exists;
+    //Calls Wire.endTransmission()
+    //Returns true if communication was successful
+    //Sets _exists flag
+    bool endTransmission();
     //Returns full register
     uint8_t getRegister(const uint8_t regAddr) const;
     //Sets a register to given data
@@ -66,10 +75,18 @@ class MCP7940NRTC {
     bool getRegisterBit(const uint8_t regAddr, const uint8_t bitNum) const;
     //Sets bit bitNum from regAddr to bitValue
     void setRegisterBit(const uint8_t regAddr, const uint8_t bitNum, const bool bitValue);
+    //Helpers to convert to/from BCD
     static uint8_t dec2bcd(uint8_t num);
     static uint8_t bcd2dec(uint8_t num);
 };
 
 #endif
  
-
+bool MCP7940NRTC::endTransmission() {
+    if (Wire.endTransmission() != 0) {
+        _exists = false;
+        return false;
+    }
+    _exists = true;
+    return true;
+}
