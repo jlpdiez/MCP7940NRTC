@@ -1,31 +1,37 @@
 #include <Wire.h>
 #include "MCP7940NRTC.h"
 //TODO: REMOVE
-//#include <Arduino.h>
+#include <Arduino.h>
 
 #define MCP7940N_CTRL_ID 0x6F 
-#define MCP7940N_CONF_REG 0x07
+#define MCP7940N_CONTROL_REG 0x07
 
+// *********************************************
+// PUBLIC METHODS
+// *********************************************
 MCP7940NRTC::MCP7940NRTC(uint8_t sdaPin, uint8_t sclPin)
 : _sdaPin(sdaPin), _sclPin(sclPin), _exists(false) {
     Wire.begin(_sdaPin, _sclPin);
 }
   
-// PUBLIC FUNCTIONS
-// Aquire data from buffer and convert to time_t
+//Acquire data from hardware and return time_t
+//Returns 0 if theres a comms issue or oscillator is halted
 time_t MCP7940NRTC::get() {
     tmElements_t tm;
     if (!read(tm)) return 0;
     return(makeTime(tm));
 }
 
+//Sets the HW clock to the time given in time_t format
+//Returns false if there was a communication error
 bool MCP7940NRTC::set(time_t t) {
     tmElements_t tm;
     breakTime(t, tm);
     return write(tm); 
 }
 
-// Aquire data from the RTC chip in BCD format
+//Returns the HW time in tmElements_t format
+//False if theres a comms issue or oscillator is halted
 bool MCP7940NRTC::read(tmElements_t &tm) {
     uint8_t sec;
     Wire.beginTransmission(MCP7940N_CTRL_ID);
@@ -53,6 +59,8 @@ bool MCP7940NRTC::read(tmElements_t &tm) {
     return true;
 }
 
+//Writes the given data to the HW registers
+//Returns false if there was a comms error
 bool MCP7940NRTC::write(tmElements_t &tm) {
     // To eliminate any potential race conditions,
     // stop the clock before writing the values,
@@ -87,55 +95,19 @@ bool MCP7940NRTC::write(tmElements_t &tm) {
     return true;
 }
 
-//Makes use of OSCRUN bit which is bit 6 of 0x03 register.
+//Makes use of OSCRUN bit which is bit 5 of 0x03 register.
 //OSCRUN 1 = Oscillator is enabled and running
 //OSCRUN 0 = Oscillator has stopped or has been disabled
 bool MCP7940NRTC::isRunning() {
-    // const uint8_t cuarenta = 0x40;
-    uint8_t dataR = getRegister(0x03);
-    // Serial.print("recv: ");
-    // Serial.println(dataR,BIN);
-    // // if ((dataR & cuarenta) == cuarenta)
-    // //     Serial.println("TRUE");
-    // Serial.println(uint8_t(dataR) & (1<<6));
-    // Serial.println(dataR & (1<<6) == (1<<6));
-    // // return (dataR & cuarenta);
-    // if ((dataR >> 6) & 1)
-    //     Serial.print("tru");
-    // else
-    //     Serial.print("fals");
-    //return ((dataR & (1<<6)) == (1<<6));
-    return (dataR >> 6) & 1;
+    return getRegisterBit(0x03, 5);
 }
-    /*Wire.beginTransmission(MCP7940N_CTRL_ID);
-    #if ARDUINO >= 100  
-      Wire.write((uint8_t)0x03); 
-    #else
-      Wire.send(0x03);
-    #endif  
-    Wire.endTransmission();
-
-    // Just fetch the seconds register and check the top bit
-    Wire.requestFrom(MCP7940N_CTRL_ID, 1);
-    // uint16_t readB = Wire.read();
-    // Serial.print("isRunning: ");
-    // Serial.println(readB, HEX);
-    // Serial.print("& 0x80: ");
-    // Serial.println(readB & 0x80);
-    // Serial.print("& 0x80 == 0x80: ");
-    // Serial.println((readB & 0x80) == 0x80);
-    #if ARDUINO >= 100
-      return (Wire.read() & 0x80);
-    #else
-      return (Wire.receive() & 0x80);
-    #endif  */
 
 void MCP7940NRTC::setConfig(const uint8_t confValue) {
-    setRegister(MCP7940N_CONF_REG, confValue);
+    setRegister(MCP7940N_CONTROL_REG, confValue);
 }
 
 uint8_t MCP7940NRTC::getConfig() const {
-    return getRegister(MCP7940N_CONF_REG);
+    return getRegister(MCP7940N_CONTROL_REG);
 }
 
 // void MCP7940NRTC::setCalibration(char calValue) {
@@ -172,27 +144,64 @@ uint8_t MCP7940NRTC::getConfig() const {
 //   return out;
 // }
 
-// PRIVATE FUNCTIONS
+//Makes use of VBATEN bit which is bit 3 of 0x03 register.
+//VBATEN 1 = Vbat input is enabled
+//VBATEN 0 = Vbat input is disabled
+bool MCP7940NRTC::getBatteryStatus() const {
+    return getRegisterBit(0x03, 3);
+}
 
+void MCP7940NRTC::enableBattery() {
+    setRegisterBit(0x03, 3, 1);
+}
+
+void MCP7940NRTC::disableBattery() {
+    setRegisterBit(0x03, 3, 0);
+}
+
+
+// *********************************************
+// PRIVATE METHODS
+// *********************************************
 uint8_t MCP7940NRTC::getRegister(const uint8_t regAddr) const {
     Wire.beginTransmission(MCP7940N_CTRL_ID);
     Wire.write((uint8_t)regAddr); 
     Wire.endTransmission();
-
     Wire.requestFrom(MCP7940N_CTRL_ID, 1);
-    #if ARDUINO >= 100
-        return Wire.read();
-    #else
-        return Wire.receive();
-    #endif
+    return Wire.read();
 }
 
 void MCP7940NRTC::setRegister(const uint8_t regAddr, const uint8_t regData) {
+    //Select device
     Wire.beginTransmission(MCP7940N_CTRL_ID);
-    Wire.write((uint8_t)regAddr); // Point to calibration register
+    //Select register
+    Wire.write((uint8_t)regAddr);
+    //Give data to write
     Wire.write(regData);
     Wire.endTransmission();  
 }
+
+//Check that bit bitNum of registerAddress is 1
+bool MCP7940NRTC::getRegisterBit(const uint8_t regAddr, const uint8_t bitNum) const {
+    return (getRegister(regAddr) >> bitNum) & 1;
+}
+
+void MCP7940NRTC::setRegisterBit(const uint8_t regAddr, const uint8_t bitNum, const bool bitValue) {
+    uint8_t regValue = getRegister(regAddr);
+    Serial.print("get: ");
+    Serial.println(regValue, BIN);
+    //Set to one
+    if (bitValue == 1) {
+        regValue |= 1 << bitNum;
+    //Set to zero
+    } else {
+        regValue &= ~(1 << bitNum);
+    }
+    Serial.print("set: ");
+    Serial.println(regValue, BIN);
+    setRegister(regAddr, regValue);
+}
+
 
 // Convert Decimal to Binary Coded Decimal (BCD)
 uint8_t MCP7940NRTC::dec2bcd(uint8_t num) {
