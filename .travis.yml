@@ -7,8 +7,8 @@ cache:
     - "~/.platformio"
 
 env:
-  - PLATFORMIO_CI_SRC=sexamples/ReadTest/ReadTest.ino
-  - PLATFORMIO_CI_SRC=sexamples/SetTime/SetTime.ino
+  - PLATFORMIO_CI_SRC=examples/ReadTest/ReadTest.ino
+  - PLATFORMIO_CI_SRC=examples/SetTime/SetTime.ino
 
 install:
   - pip install -U platformio
