@@ -1,10 +1,4 @@
-#if defined (__AVR_ATtiny84__) || defined(__AVR_ATtiny85__) || (__AVR_ATtiny2313__)
-    #include <TinyWireM.h>
-    #define Wire TinyWireM
-#else
-    #include <Wire.h>
-#endif
-
+#include <Wire.h>
 #include "MCP7940NRTC.h"
 //TODO: REMOVE
 //#include <Arduino.h>
@@ -35,39 +29,26 @@ bool MCP7940NRTC::set(time_t t) {
 bool MCP7940NRTC::read(tmElements_t &tm) {
     uint8_t sec;
     Wire.beginTransmission(MCP7940N_CTRL_ID);
-    #if ARDUINO >= 100  
-        Wire.write((uint8_t)0x00); 
-    #else
-        Wire.send(0x00);
-    #endif  
-      if (Wire.endTransmission() != 0) {
-          _exists = false;
-          return false;
-      }
-      _exists = true;
+    Wire.write((uint8_t)0x00); 
+    if (Wire.endTransmission() != 0) {
+      _exists = false;
+      return false;
+    }
+    _exists = true;
 
     // request the 7 data fields   (secs, min, hr, dow, date, mth, yr)
     Wire.requestFrom(MCP7940N_CTRL_ID, tmNbrFields);
     if (Wire.available() < tmNbrFields) return false;
-    #if ARDUINO >= 100
-        sec = Wire.read();
-        tm.Second = bcd2dec(sec & 0x7f);    
-        tm.Minute = bcd2dec(Wire.read() );
-        tm.Hour =   bcd2dec(Wire.read() & 0x3f);  // mask assumes 24hr clock
-        tm.Wday = bcd2dec(Wire.read() );
-        tm.Day = bcd2dec(Wire.read() );
-        tm.Month = bcd2dec(Wire.read() );
-        tm.Year = y2kYearToTm((bcd2dec(Wire.read())));
-    #else
-        sec = Wire.receive();
-        tm.Second = bcd2dec(sec & 0x7f);   
-        tm.Minute = bcd2dec(Wire.receive() );
-        tm.Hour =   bcd2dec(Wire.receive() & 0x3f);  // mask assumes 24hr clock
-        tm.Wday = bcd2dec(Wire.receive() );
-        tm.Day = bcd2dec(Wire.receive() );
-        tm.Month = bcd2dec(Wire.receive() );
-        tm.Year = y2kYearToTm((bcd2dec(Wire.receive())));
-    #endif
+
+    sec = Wire.read();
+    tm.Second = bcd2dec(sec & 0x7f);    
+    tm.Minute = bcd2dec(Wire.read() );
+    tm.Hour =   bcd2dec(Wire.read() & 0x3f);  // mask assumes 24hr clock
+    tm.Wday = bcd2dec(Wire.read() );
+    tm.Day = bcd2dec(Wire.read() );
+    tm.Month = bcd2dec(Wire.read() );
+    tm.Year = y2kYearToTm((bcd2dec(Wire.read())));
+
     if (sec & 0x00) return false; // clock is halted
     return true;
 }
@@ -77,25 +58,16 @@ bool MCP7940NRTC::write(tmElements_t &tm) {
     // stop the clock before writing the values,
     // then restart it after.
     Wire.beginTransmission(MCP7940N_CTRL_ID);
-    #if ARDUINO >= 100  
-        Wire.write((uint8_t)0x00); // reset register pointer  
-        Wire.write((uint8_t)0x00); // Stop the clock. The seconds will be written last
-        Wire.write(dec2bcd(tm.Minute));
-        Wire.write(dec2bcd(tm.Hour));      // sets 24 hour format
-        Wire.write(dec2bcd(tm.Wday));   
-        Wire.write(dec2bcd(tm.Day));
-        Wire.write(dec2bcd(tm.Month));
-        Wire.write(dec2bcd(tmYearToY2k(tm.Year))); 
-    #else  
-        Wire.send(0x00); // reset register pointer  
-        Wire.send(0x00); // Stop the clock. The seconds will be written last
-        Wire.send(dec2bcd(tm.Minute));
-        Wire.send(dec2bcd(tm.Hour));      // sets 24 hour format
-        Wire.send(dec2bcd(tm.Wday));   
-        Wire.send(dec2bcd(tm.Day));
-        Wire.send(dec2bcd(tm.Month));
-        Wire.send(dec2bcd(tmYearToY2k(tm.Year)));   
-    #endif
+    
+    Wire.write((uint8_t)0x00); // reset register pointer  
+    Wire.write((uint8_t)0x00); // Stop the clock. The seconds will be written last
+    Wire.write(dec2bcd(tm.Minute));
+    Wire.write(dec2bcd(tm.Hour));      // sets 24 hour format
+    Wire.write(dec2bcd(tm.Wday));   
+    Wire.write(dec2bcd(tm.Day));
+    Wire.write(dec2bcd(tm.Month));
+    Wire.write(dec2bcd(tmYearToY2k(tm.Year))); 
+
     if (Wire.endTransmission() != 0) {
         _exists = false;
         return false;
@@ -104,13 +76,9 @@ bool MCP7940NRTC::write(tmElements_t &tm) {
 
     // Now go back and set the seconds, starting the clock back up as a side effect
     Wire.beginTransmission(MCP7940N_CTRL_ID);
-    #if ARDUINO >= 100  
-        Wire.write((uint8_t)0x00); // reset register pointer  
-        Wire.write(dec2bcd(tm.Second) | 0x80); // write the seconds and start oscillator
-    #else  
-        Wire.send(0x00); // reset register pointer  
-        Wire.send(dec2bcd(tm.Second) | 0x80); // write the seconds and start oscillator
-    #endif
+    Wire.write((uint8_t)0x00); // reset register pointer  
+    Wire.write(dec2bcd(tm.Second) | 0x80); // write the seconds and start oscillator
+
     if (Wire.endTransmission() != 0) {
         _exists = false;
         return false;
@@ -208,11 +176,7 @@ uint8_t MCP7940NRTC::getConfig() const {
 
 uint8_t MCP7940NRTC::getRegister(const uint8_t regAddr) const {
     Wire.beginTransmission(MCP7940N_CTRL_ID);
-    #if ARDUINO >= 100  
-        Wire.write((uint8_t)regAddr); 
-    #else
-        Wire.send(regAddr);
-    #endif  
+    Wire.write((uint8_t)regAddr); 
     Wire.endTransmission();
 
     Wire.requestFrom(MCP7940N_CTRL_ID, 1);
@@ -225,13 +189,8 @@ uint8_t MCP7940NRTC::getRegister(const uint8_t regAddr) const {
 
 void MCP7940NRTC::setRegister(const uint8_t regAddr, const uint8_t regData) {
     Wire.beginTransmission(MCP7940N_CTRL_ID);
-    #if ARDUINO >= 100  
-        Wire.write((uint8_t)regAddr); // Point to calibration register
-        Wire.write(regData);
-    #else  
-        Wire.send(regAddr); // Point to calibration register
-        Wire.send(regData);
-    #endif
+    Wire.write((uint8_t)regAddr); // Point to calibration register
+    Wire.write(regData);
     Wire.endTransmission();  
 }
 
