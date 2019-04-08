@@ -3,8 +3,8 @@
 #include <MCP7940NRTC.h>
 
 //Change these if needed
-const uint8_t SCLPIN = A4;
-const uint8_t SDAPIN = A5;
+const uint8_t SCLPIN = 12;
+const uint8_t SDAPIN = 14;
 
 //Declare RTC object
 MCP7940NRTC RTC = MCP7940NRTC(SDAPIN, SCLPIN);
