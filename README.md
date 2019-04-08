@@ -3,9 +3,9 @@
 [![C++ Arduino](https://img.shields.io/badge/c%2B%2B-Arduino%20-red.svg)](https://github.com/adafruit/Adafruit_CircuitPlayground)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
-This library is intended to make use of the MCP7940N RTC under the Arduino environment for the ESP8266, ESP01, ESP12E & all other derivatives.
+This library is intended to make use of the MCP7940N RTC under the Arduino environment for the ESP8266, ESP01, ESP12E & all other derivative hardware.
 
-It's main purpose is to be used in conjuction with the [Time library](https://github.com/PaulStoffregen/Time).
+It's been based on the [DS1307RTC library](https://github.com/PaulStoffregen/DS1307RTC) and It's main purpose is to be used in conjuction with the [Time library](https://github.com/PaulStoffregen/Time).
 
 ## Usage:
 First of all object should be created by passing the SDA & SCL pin numbers to its contructor:
