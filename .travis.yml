@@ -13,10 +13,10 @@ env:
 install:
   - pip install -U platformio
   - platformio update
-  
+
     #External libraries
   - wget https://github.com/PaulStoffregen/Time/archive/master.zip -O /tmp/Time.zip
   - unzip /tmp/Time.zip -d /tmp
 
 script:
-  - platformio ci --lib="/tmp/Time-master" --board=uno --board=megaatmega2560 --board=esp12e
+  - platformio ci --lib="." --lib="/tmp/Time-master" --board=uno --board=megaatmega2560 --board=esp12e
