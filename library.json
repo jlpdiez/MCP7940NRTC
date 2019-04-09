@@ -1,12 +1,16 @@
 {
-  "name": "MCP7940N",
-  "keywords": "i2c, rtc, time, clock",
-  "description": "MCP7940N RTC (Real-Time-Clock)",
+  "name": "MCP7940NRTC",
+  "keywords": "i2c, rtc, time, clock, mcp7940n, mcp7940",
+  "description": "MCP7940N RTC (Real-Time-Clock) to be used with Time library",
   "repository":
   {
     "type": "git",
-    "url": "https://github.com/Melkoroth/MCP7940NRTC"
+    "url": "https://github.com/Melkoroth/MCP7940NRTC.git"
   },
   "frameworks": "arduino",
-  "platforms": "atmelavr"
+  "platforms": "espressif8266",
+  "dependencies":
+  {
+    "name": "Time"
+  }
 }
