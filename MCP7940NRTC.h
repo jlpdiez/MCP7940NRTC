@@ -30,13 +30,13 @@ class MCP7940NRTC {
     MCP7940NRTC(uint8_t sdaPin, uint8_t sclPin);
     //Acquire data from hardware and return time_t
     //Returns 0 if there is a comms issue or oscillator is halted
-    time_t get();
+    static time_t get();
     //Sets the HW clock to the time given in time_t format
     //Returns false if there was a communication error
     bool set(time_t t);
     //Returns the HW time in tmElements_t format
     //False if theres a comms issue or oscillator is halted
-    bool read(tmElements_t &tm);
+    static bool read(tmElements_t &tm);
     //Writes the given data to the HW registers
     //Returns false if there was a comms error
     bool write(tmElements_t &tm);
@@ -55,11 +55,11 @@ class MCP7940NRTC {
   private:
     uint8_t _sdaPin, _sclPin;
     //Goes to true when comm was succesful
-    bool _exists;
+    static bool _exists;
     //Calls Wire.endTransmission()
     //Returns true if communication was successful
     //Sets _exists flag
-    bool endTransmission();
+    static bool endTransmission();
     //Returns full register
     uint8_t getRegister(const uint8_t regAddr) const;
     //Sets a register to given data

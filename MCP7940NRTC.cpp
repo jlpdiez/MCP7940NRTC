@@ -9,10 +9,13 @@
 // PUBLIC METHODS
 // *********************************************
 MCP7940NRTC::MCP7940NRTC(uint8_t sdaPin, uint8_t sclPin)
-: _sdaPin(sdaPin), _sclPin(sclPin), _exists(false) {
+: _sdaPin(sdaPin), _sclPin(sclPin) {
     Wire.begin(_sdaPin, _sclPin);
 }
-  
+
+//Init exists
+bool MCP7940NRTC::_exists = false;
+
 //Acquire data from hardware and return time_t
 //Returns 0 if theres a comms issue or oscillator is halted
 time_t MCP7940NRTC::get() {
