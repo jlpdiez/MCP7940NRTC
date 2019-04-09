@@ -93,40 +93,6 @@ bool MCP7940NRTC::isRunning() {
     return getRegisterBit(MCP7940N_WKDAY_REG, 5);
 }
 
-// void MCP7940NRTC::setCalibration(char calValue) {
-//   unsigned char calReg = abs(calValue) & 0x1f;
-//   if (calValue >= 0) calReg |= 0x20; // S bit is positive to speed up the clock
-//   Wire.beginTransmission(MCP7940N_CTRL_ID);
-// #if ARDUINO >= 100  
-//   Wire.write((uint8_t)0x07); // Point to calibration register
-//   Wire.write(calReg);
-// #else  
-//   Wire.send(0x07); // Point to calibration register
-//   Wire.send(calReg);
-// #endif
-//   Wire.endTransmission();  
-// }
-
-// char MCP7940NRTC::getCalibration() {
-//   Wire.beginTransmission(MCP7940N_CTRL_ID);
-// #if ARDUINO >= 100  
-//   Wire.write((uint8_t)0x07); 
-// #else
-//   Wire.send(0x07);
-// #endif  
-//   Wire.endTransmission();
-
-//   Wire.requestFrom(MCP7940N_CTRL_ID, 1);
-// #if ARDUINO >= 100
-//   unsigned char calReg = Wire.read();
-// #else
-//   unsigned char calReg = Wire.receive();
-// #endif
-//   char out = calReg & 0x1f;
-//   if (!(calReg & 0x20)) out = -out; // S bit clear means a negative value
-//   return out;
-// }
-
 //Makes use of VBATEN bit which is bit 3 of 0x03 register.
 //VBATEN 1 = Vbat input is enabled
 //VBATEN 0 = Vbat input is disabled
@@ -191,21 +157,6 @@ void MCP7940NRTC::setRegisterBit(const uint8_t regAddr, const uint8_t bitNum, co
     setRegister(regAddr, regValue);
 }
 
-//Makes use of EXTOSC bit which is bit 3 of 0x07 register.
-//EXTOSC 1 = Enable X1 pin to be driven by external 32.768 kHz source
-//EXTOSC 0 = Disable external 32.768 kHz input.
-bool MCP7940NRTC::getExtOscStatus() const {
-    return getRegisterBit(MCP7940N_CONTROL_REG, 3);
-}
-
-void MCP7940NRTC::enableExtOsc() {
-    setRegisterBit(MCP7940N_CONTROL_REG, 3, 1);
-}
-
-void MCP7940NRTC::disableExtOsc() {
-    setRegisterBit(MCP7940N_CONTROL_REG, 3, 0);
-}
-
 // Convert Decimal to Binary Coded Decimal (BCD)
 uint8_t MCP7940NRTC::dec2bcd(uint8_t num) {
     return ((num/10 * 16) + (num % 10));
@@ -216,3 +167,38 @@ uint8_t MCP7940NRTC::bcd2dec(uint8_t num) {
     return ((num/16 * 10) + (num % 16));
 }
 
+//These come from DS1307 and are not tailored to MCP7940N
+
+// void MCP7940NRTC::setCalibration(char calValue) {
+//   unsigned char calReg = abs(calValue) & 0x1f;
+//   if (calValue >= 0) calReg |= 0x20; // S bit is positive to speed up the clock
+//   Wire.beginTransmission(MCP7940N_CTRL_ID);
+// #if ARDUINO >= 100  
+//   Wire.write((uint8_t)0x07); // Point to calibration register
+//   Wire.write(calReg);
+// #else  
+//   Wire.send(0x07); // Point to calibration register
+//   Wire.send(calReg);
+// #endif
+//   Wire.endTransmission();  
+// }
+
+// char MCP7940NRTC::getCalibration() {
+//   Wire.beginTransmission(MCP7940N_CTRL_ID);
+// #if ARDUINO >= 100  
+//   Wire.write((uint8_t)0x07); 
+// #else
+//   Wire.send(0x07);
+// #endif  
+//   Wire.endTransmission();
+
+//   Wire.requestFrom(MCP7940N_CTRL_ID, 1);
+// #if ARDUINO >= 100
+//   unsigned char calReg = Wire.read();
+// #else
+//   unsigned char calReg = Wire.receive();
+// #endif
+//   char out = calReg & 0x1f;
+//   if (!(calReg & 0x20)) out = -out; // S bit clear means a negative value
+//   return out;
+// }

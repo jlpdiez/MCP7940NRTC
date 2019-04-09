@@ -29,7 +29,7 @@ class MCP7940NRTC {
   public:
     MCP7940NRTC(uint8_t sdaPin, uint8_t sclPin);
     //Acquire data from hardware and return time_t
-    //Returns 0 if theres a comms issue or oscillator is halted
+    //Returns 0 if there is a comms issue or oscillator is halted
     time_t get();
     //Sets the HW clock to the time given in time_t format
     //Returns false if there was a communication error
@@ -68,11 +68,6 @@ class MCP7940NRTC {
     bool getRegisterBit(const uint8_t regAddr, const uint8_t bitNum) const;
     //Sets bit bitNum from regAddr to bitValue
     void setRegisterBit(const uint8_t regAddr, const uint8_t bitNum, const bool bitValue);
-    //Checks the external oscillator status
-    bool getExtOscStatus() const;
-    //Sets the external oscillator
-    void enableExtOsc();
-    void disableExtOsc();
     //Helpers to convert to/from BCD
     static uint8_t dec2bcd(uint8_t num);
     static uint8_t bcd2dec(uint8_t num);
